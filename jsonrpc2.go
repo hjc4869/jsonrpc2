@@ -197,6 +197,10 @@ type Error struct {
 	Data    *json.RawMessage `json:"data"`
 }
 
+type stackInfo struct {
+	Stack string `json:"stack"`
+}
+
 // SetError sets e.Error to the JSON representation of v. If JSON
 // marshaling fails, it panics.
 func (e *Error) SetError(v interface{}) {
@@ -209,7 +213,13 @@ func (e *Error) SetError(v interface{}) {
 
 // Error implements the Go error interface.
 func (e *Error) Error() string {
-	return fmt.Sprintf("jsonrpc2: code %v message: %s", e.Code, e.Message)
+	errStr := fmt.Sprintf("jsonrpc2: code %v message: %s", e.Code, e.Message)
+	info := stackInfo{}
+	err := json.Unmarshal(*e.Data, &info)
+	if err == nil && info.Stack != "" {
+		errStr += "\n" + info.Stack
+	}
+	return errStr
 }
 
 const (
