@@ -197,8 +197,15 @@ type Error struct {
 	Data    *json.RawMessage `json:"data"`
 }
 
+var showErrorStack bool
+
 type stackInfo struct {
 	Stack string `json:"stack"`
+}
+
+// SetErrorStackPreference sets the preference of printing error stack
+func SetErrorStackPreference(show bool) {
+	showErrorStack = show
 }
 
 // SetError sets e.Error to the JSON representation of v. If JSON
@@ -214,10 +221,12 @@ func (e *Error) SetError(v interface{}) {
 // Error implements the Go error interface.
 func (e *Error) Error() string {
 	errStr := fmt.Sprintf("jsonrpc2: code %v message: %s", e.Code, e.Message)
-	info := stackInfo{}
-	err := json.Unmarshal(*e.Data, &info)
-	if err == nil && info.Stack != "" {
-		errStr += "\n" + info.Stack
+	if showErrorStack {
+		info := stackInfo{}
+		err := json.Unmarshal(*e.Data, &info)
+		if err == nil && info.Stack != "" {
+			errStr += "\n" + info.Stack
+		}
 	}
 	return errStr
 }
